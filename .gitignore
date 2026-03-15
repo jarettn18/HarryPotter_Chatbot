@@ -1,0 +1,14 @@
+# Vector database
+chroma_db/
+
+# Environment
+.env
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# OS
+.DS_Store
