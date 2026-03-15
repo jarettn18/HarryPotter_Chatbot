@@ -201,3 +201,18 @@ The passages suggest Snape had deeper romantic feelings for Lily. When she and J
 Dumbledore ultimately asks Snape to protect Harry Potter "if you loved Lily Evans, if you truly loved her" (Passage 4), connecting Snape's devotion to Lily with his subsequent protection of her son.
 ```
 
+### Query: Give me a couple quotes from Dudley
+### Response
+```
+# Quotes from Dudley
+
+Based on the provided passages, here are a couple of quotes from Dudley:
+
+1. **"He was asking for it,"** - Dudley's response when Harry confronts him about beating up Mark Evans (Passage 1)
+
+2. **"Horrible. Cold. Really cold."** - Dudley describing his experience with the Dementors to his parents (Passage 3)
+
+Both quotes reveal different aspects of Dudley's character—the first showing his aggressive, defensive nature toward Harry, and the second showing his genuine fear and distress after encountering the Dementors in the alley.
+
+```
+
