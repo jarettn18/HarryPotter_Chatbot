@@ -1,10 +1,10 @@
 [project]
 name = "hp-rag"
 version = "0.1.0"
-description = "RAG pipeline over Harry Potter text using Claude and ChromaDB"
+description = "RAG pipeline over Harry Potter text using Ollama and ChromaDB"
 requires-python = ">=3.12"
 dependencies = [
-    "anthropic>=0.40.0",
+    "ollama>=0.4.0",
     "sentence-transformers>=3.0.0",
     "chromadb>=0.5.0",
     "datasets>=3.0.0",

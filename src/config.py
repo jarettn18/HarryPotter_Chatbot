@@ -3,10 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+OLLAMA_MODEL = "llama3"
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 CHUNK_SIZE = 512       # tokens
 CHUNK_OVERLAP = 50     # tokens

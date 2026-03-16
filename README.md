@@ -1,6 +1,6 @@
 # Harry Potter RAG Pipeline
 
-A Retrieval-Augmented Generation (RAG) pipeline that lets you ask questions about Harry Potter. It loads the full text from a HuggingFace dataset, chunks and embeds it into a local vector database, then retrieves relevant passages to ground Claude's answers in actual source text.
+A Retrieval-Augmented Generation (RAG) pipeline that lets you ask questions about Harry Potter. It loads the full text from a HuggingFace dataset, chunks and embeds it into a local vector database, then retrieves relevant passages to ground Ollama's answers in actual source text.
 
 ## How It Works
 
@@ -22,13 +22,13 @@ HuggingFace Dataset → Chunking → Embedding → ChromaDB
 ### Query (per question)
 
 ```
-Question → Embed → Search ChromaDB → Build Prompt → Claude → Answer
+Question → Embed → Search ChromaDB → Build Prompt → Ollama (llama3) → Answer
 ```
 
 1. **Embed the question** — The user's question is embedded using the same model
 2. **Retrieve** — ChromaDB finds the top 5 most semantically similar chunks via cosine similarity
-3. **Generate** — The retrieved passages are formatted into a prompt and sent to Claude (`claude-haiku-4-5`) with instructions to answer using only the provided context
-4. **Return** — Claude's response is returned, grounded in the actual Harry Potter text
+3. **Generate** — The retrieved passages are formatted into a prompt and sent to Ollama (`llama3`) with instructions to answer using only the provided context
+4. **Return** — The model's response is returned, grounded in the actual Harry Potter text
 
 ## Project Structure
 
@@ -40,7 +40,7 @@ src/
 ├── embedder.py       # Local embedding via sentence-transformers
 ├── vector_store.py   # ChromaDB wrapper for indexing and similarity search
 ├── retriever.py      # Combines embedding + vector search into one step
-├── generator.py      # Builds the RAG prompt and calls Claude
+├── generator.py      # Builds the RAG prompt and calls Ollama
 ├── pipeline.py       # Orchestrates the full ingest and query flows
 └── cli.py            # Command-line interface
 ```
@@ -50,7 +50,7 @@ src/
 ### Prerequisites
 
 - Python 3.12+
-- An [Anthropic API key](https://console.anthropic.com/) (for generation)
+- [Ollama](https://ollama.com/) installed and running locally
 
 ### Install
 
@@ -61,16 +61,14 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-### Configure API Keys
+### Set up Ollama
+
+1. Install Ollama from [ollama.com](https://ollama.com/) or via `brew install ollama`
+2. Start the Ollama server (open the app, or run `ollama serve`)
+3. Pull the llama3 model:
 
 ```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your key:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
+ollama pull llama3
 ```
 
 ## Usage
@@ -116,7 +114,7 @@ Settings are in `src/config.py`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Local sentence-transformers model for embeddings |
-| `CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Claude model used for generation |
+| `OLLAMA_MODEL` | `llama3` | Ollama model used for generation |
 | `CHUNK_SIZE` | `512` | Max tokens per chunk |
 | `CHUNK_OVERLAP` | `50` | Token overlap between consecutive chunks |
 | `TOP_K` | `5` | Number of passages retrieved per query |
@@ -141,78 +139,107 @@ python -m pytest tests/ -v
 ```
 $ python -m src.cli chat
 
-Harry Potter RAG Chat (type 'quit' to exit)
+Harry Potter RAG Chat (type ‘quit’ to exit)
 ```
 ### Query: What are the Deathly Hallows?
 
 ### Response:
 ```
-# The Deathly Hallows
+  Embedding batch 1/1...
+Generated 1 embeddings
 
-Based on the provided passages, the Deathly Hallows are three magical objects from "The Tale of the Three Brothers," a children's story in *The Tales of Beedle the Bard*.
 
-According to Xenophilius Lovegood [Passage 2], the three Hallows are:
+According to the passages provided, the Deathly Hallows refer to three objects or Hallows that, if united, will make the possessor master of Death. The three objects are:
 
-1. **The Elder Wand** - represented by a straight vertical line
-2. **The Resurrection Stone** - represented by a circle
-3. **The Cloak of Invisibility** - represented by a triangle enclosing the other two symbols
+1. The Elder Wand
+2. The Resurrection Stone
+3. The Cloak of Invisibility
 
-[Passage 2] explains that "the ancient story refers to three objects, or Hallows, which, if united, will make the possessor master of Death."
+(Xenophilius Lovegood, Passage 2)
 
-However, it's important to note that [Passage 2] clarifies the original story contains "no mention of the words 'Deathly Hallows'" — this interpretation comes from those who believe in their significance. The story itself is described [Passage 5] as "a morality tale" told to teach lessons to children, though some characters, like Xenophilius, believe the Hallows are real objects that actually exist.
+These objects are mentioned in “The Tale of the Three Brothers” story, which Xenophilius is familiar with and suggests that Hermione read aloud from “The Tales of Beedle the Bard”.
 ```
 
 ### Query: How is polyjuice potion made?
 
 ### Response:
 ```
-The passages tell us that:
+  Embedding batch 1/1...
+Generated 1 embeddings
 
-- **Polyjuice Potion is a transformation potion** that changes you into somebody else, and the effects wear off after a while (Passage 2)
-- **The recipe is found in a book called "Moste Potente Potions"** which is located in the Restricted Section of the library (Passage 2)
-- **The potion has a mudlike appearance** when being brewed (Passage 1)
-- **It requires human hair as an ingredient** - specifically hair from the person you wish to transform into (Passages 3 and 4)
-- **The potion must be drunk** to take effect, and the transformation process is physically uncomfortable and involves writhing, burning sensations, and a melting feeling (Passage 4)
 
-However, the context passages do not contain the actual step-by-step instructions or complete ingredient list for making Polyjuice Potion itself. To find that information, you would need to consult "Moste Potente Potions" as mentioned in Passage 2.
+According to Passage 2, Polyjuice Potion can be made by obtaining the recipe from a book called “Moste Potente Potions” which is located in the Restricted Section of the library. The book requires a signed note of permission from a teacher to access it. Additionally, according to Passage 4, Hermione mentioned that she had already made Polyjuice Potion before, implying that she may have found another way to obtain the recipe or learned how to make it through other means.
 ```
 
 ### Query: Describe the relationship between Snape and Lily Potter.
 
 ### Response:
 ```
-# Snape and Lily Potter's Relationship
+  Embedding batch 1/1...
+Generated 1 embeddings
 
-Based on the provided passages, Snape and Lily had a complicated relationship that evolved over time:
 
-## Early Friendship
-In their younger years at Hogwarts, Snape and Lily were **close friends**. Snape refers to her as his "best friend" (Passage 2), and they spent time together, including a memorable encounter on the Hogwarts Express during their first year (Passage 3).
+Based on Passage 1, Passage 2, and Passage 4, the relationship between Snape and Lily Potter can be described as follows:
 
-## Growing Tension
-However, their friendship became strained due to several conflicts:
-- Lily disapproved of Snape's association with students involved in Dark Magic, particularly friends like Avery and Mulciber (Passage 2)
-- Snape harbored resentment toward James Potter and his friends, while Lily defended them
-- Snape was obsessed with exposing what he saw as the wrongdoings of Potter and his group (Passage 2)
+Snape and Lily had a complicated history. They were once friends, but their friendship was tainted by Snape’s resentment towards James Potter and his friends. Snape felt that they were getting special treatment and that he was being left out. This led to Snape becoming bitter and jealous.
 
-## Unrequited Feelings
-The passages suggest Snape had deeper romantic feelings for Lily. When she and James "put their faith in the wrong person," Dumbledore asks Snape: "Weren't you hoping that Lord Voldemort would spare her?" (Passage 4). After Lily's death, Snape expresses profound grief and guilt, saying "I wish . . . I wish I were dead" (Passage 4).
+Lily tried to reason with Snape, pointing out the unfairness of his behavior and telling him not to be ungrateful for her help in saving him from whatever was down the Whomping Willow tunnel. However, Snape’s feelings towards James and his friends remained strong, and he continued to harbor resentment towards them.
 
-## Legacy
-Dumbledore ultimately asks Snape to protect Harry Potter "if you loved Lily Evans, if you truly loved her" (Passage 4), connecting Snape's devotion to Lily with his subsequent protection of her son.
+Despite their differences, Lily seemed to have a certain affection for Snape, as evidenced by her willingness to talk to him on the Hogwarts Express (Passage 3) and her attempt to defend him from Dumbledore’s criticism (Passage 4).
+
+Snape’s feelings towards Lily were complex. While he was jealous of James and his friends, he also seemed to have a deep affection for Lily herself. He was devastated by her death and felt guilty about not being able to protect her or keep her safe.
+
+In the end, Dumbledore used Snape’s love for Lily as leverage to persuade him to help protect Harry Potter, who was in danger due to his connection to Voldemort (Passage 4).
 ```
 
 ### Query: Give me a couple quotes from Dudley
+
+### Response:
+```
+  Embedding batch 1/1...
+Generated 1 embeddings
+
+
+Based on the provided context passages, here are a couple of quotes from Dudley:
+
+1. “He was asking for it.” - This quote appears when Harry asks Dudley who he’s been beating up tonight.
+2. “Point that thing somewhere else!” - This quote appears when Harry points his wand at Dudley and Dudley tries to avoid getting hit.
+
+Please note that these are just a couple of quotes from the provided context passages, and there might be more quotes from Dudley in the actual text or story.
+```
+
+## Query with --show-sources
+```
+python -m src.cli query “How is polyjuice potion made?” --show-sources
+```
 ### Response
 ```
-# Quotes from Dudley
+  Embedding batch 1/1...
+Generated 1 embeddings
 
-Based on the provided passages, here are a couple of quotes from Dudley:
 
-1. **"He was asking for it,"** - Dudley's response when Harry confronts him about beating up Mark Evans (Passage 1)
+According to Passage 2, Polyjuice Potion can be made by transforming into someone else. Hermione explains that it “transforms you into somebody else” and suggests that they could change into three of the Slytherins. However, it’s implied that the recipe for making Polyjuice Potion is difficult to obtain, as Snape mentioned it being in a book called Moste Potente Potions, which is bound to be in the Restricted Section of the library.
 
-2. **"Horrible. Cold. Really cold."** - Dudley describing his experience with the Dementors to his parents (Passage 3)
+Passage 4 mentions that Harry and his friends drink separate portions of Polyjuice Potion, but it doesn’t provide details on how the potion is made.
 
-Both quotes reveal different aspects of Dudley's character—the first showing his aggressive, defensive nature toward Harry, and the second showing his genuine fear and distress after encountering the Dementors in the alley.
+--- Retrieved Sources ---
 
+[1] ‘t made ‘em yet. Anyone tell me what this one is?”
+
+He indicated the cauldron nearest the Slytherin table. Harry raised himself slightly in his seat and saw what looked like plain water boiling away i...
+
+[2] ,” said Hermione coldly. “What we’d need to do is to get inside the Slytherin common room and ask Malfoy a few questions without him realizing it’s us.”
+
+“But that’s impossible,” Harry said as Ron lau...
+
+[3]  enjoy the unexpected warmth, however, before Hermione’s silent Stunning Spell hit her in the chest and she toppled over.
+
+“Nicely done, Hermione,” said Ron, emerging from behind a bin beside the thea...
+
+[4]  Hermione reached for their glasses. “We’d better not all drink them in here. . . . Once we turn into Crabbe and Goyle we won’t fit. And Millicent Bulstrode’s no pixie.”
+
+“Good thinking,” said Ron, un...
+
+[5]  a heavy and sometimes irreversible sleep, so you will need to pay close attention to what you are doing.” On Harry’s left, Hermione sat up a little straighter, her expression one of the utmost attent...
+--- End Sources ---
 ```
-
